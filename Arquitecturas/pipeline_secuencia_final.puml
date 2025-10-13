@@ -1,0 +1,160 @@
+@startuml Pipeline_Secuencia_Final
+!theme vibrant
+skinparam sequenceMessageAlign center
+skinparam shadowing true
+skinparam roundcorner 10
+skinparam defaultFontSize 11
+
+title **Pipeline de Secuencia - Propuesta de Resumen Automático de Videos**\n**Arquitectura: Whisper + mT5 con Transfer Learning**
+
+actor "👤 Usuario" as Usuario
+participant "📹 Sistema\nWeb" as Sistema
+participant "🎵 Extractor\nAudio" as Extractor
+participant "🎤 Whisper\n(Pre-entrenado)" as Whisper
+participant "🧠 mT5\n(Fine-tuned)" as MT5
+database "💾 Base de\nDatos" as BD
+participant "🌐 Interfaz\nWeb" as Web
+
+' ==============================================================================
+' FASE 1: CARGA DE VIDEO
+' ==============================================================================
+Usuario -> Sistema: Subir video educativo
+activate Sistema
+Sistema -> Sistema: Validar formato\n(MP4, AVI, MKV)
+Sistema --> Usuario: Video aceptado ✅
+
+' ==============================================================================
+' FASE 2: EXTRACCIÓN Y TRANSCRIPCIÓN
+' ==============================================================================
+grupo **FASE 1: TRANSCRIPCIÓN** (2-3 min)
+    Sistema -> Extractor: Enviar video
+    activate Extractor
+    Extractor -> Extractor: Extraer audio\n(WAV 16kHz)
+    note right
+        **Duración:** ~30 seg
+        **Librería:** MoviePy
+    end note
+    Extractor -> Whisper: Audio extraído
+    deactivate Extractor
+    
+    activate Whisper
+    Whisper -> Whisper: Detectar idioma\n(es/en)
+    Whisper -> Whisper: Transcribir audio → texto
+    note right
+        **Modelo:** Whisper base
+        **Parámetros:** 74M
+        **Pre-entrenado:** ✅
+        **Multilingüe:** 99 idiomas
+        **Duración:** 2-3 min
+    end note
+    Whisper --> Sistema: Transcripción completa
+    deactivate Whisper
+end
+
+Sistema -> BD: Guardar transcripción
+activate BD
+BD --> Sistema: Guardado ✅
+deactivate BD
+
+' ==============================================================================
+' FASE 3: GENERACIÓN DE RESUMEN
+' ==============================================================================
+grupo **FASE 2: RESUMEN** (1-2 min)
+    Sistema -> Sistema: Preprocesar texto\n(limpiar + tokenizar)
+    note right
+        • Prefijo: "resumir:"
+        • Tokenización SentencePiece
+        • Max length: 512 tokens
+    end note
+    
+    Sistema -> MT5: Texto tokenizado
+    activate MT5
+    MT5 -> MT5: Generar resumen\n(Beam search k=4)
+    note right
+        **Modelo:** mT5-small
+        **Parámetros:** 300M
+        **Pre-entrenado:** ✅ (Google)
+        **Fine-tuned:** ✅ (MLSUM)
+        **Transfer Learning:** ✅
+        **Duración:** 1-2 min
+        **GPU:** RTX 3050
+    end note
+    MT5 --> Sistema: Resumen generado
+    deactivate MT5
+end
+
+' ==============================================================================
+' FASE 4: POST-PROCESAMIENTO Y PRESENTACIÓN
+' ==============================================================================
+grupo **FASE 3: PRESENTACIÓN** (30 seg)
+    Sistema -> Sistema: Post-procesar\n(formatear + métricas)
+    note right
+        • Detokenización
+        • Limpieza final
+        • Cálculo de estadísticas
+        • Ratio compresión: 97%
+    end note
+    
+    Sistema -> BD: Guardar resumen + métricas
+    activate BD
+    BD --> Sistema: Guardado ✅
+    deactivate BD
+    
+    Sistema -> Web: Generar página HTML
+    activate Web
+    Web -> Web: Renderizar:\n• Video\n• Transcripción\n• Resumen\n• Estadísticas
+    Web --> Usuario: Mostrar resultado
+    deactivate Web
+end
+
+Usuario -> Web: Visualizar y descargar
+deactivate Sistema
+
+' ==============================================================================
+' NOTA SOBRE ENTRENAMIENTO
+' ==============================================================================
+note over MT5
+    **ENTRENAMIENTO PREVIO (una vez):**
+    
+    📊 Dataset MLSUM (español)
+       ↓
+    🔤 Tokenización
+       ↓
+    🧠 mT5-small base (Google)
+       ↓
+    🏋️ Fine-tuning (4-6 horas)
+       ↓
+    💾 Modelo especializado
+    
+    **Duración:** 4-6 horas
+    **Frecuencia:** Una sola vez
+    **GPU:** RTX 3050 (4GB)
+end note
+
+note over Whisper
+    **NO REQUIERE ENTRENAMIENTO**
+    
+    ✓ Pre-entrenado por OpenAI
+    ✓ Listo para usar
+    ✓ 680K horas de audio
+end note
+
+' ==============================================================================
+' LEYENDA DE TIEMPOS
+' ==============================================================================
+legend bottom
+    **TIEMPOS ESTIMADOS (video 30 min):**
+    
+    |= Fase |= Duración |= Proceso |
+    | Extracción audio | 30 seg | MoviePy |
+    | Transcripción | 2-3 min | Whisper |
+    | Preprocesamiento | 10 seg | Tokenización |
+    | Generación resumen | 1-2 min | mT5 Fine-tuned |
+    | Post-procesamiento | 20 seg | Formateo |
+    | Presentación | 10 seg | HTML |
+    | **TOTAL** | **5-7 min** | **Pipeline completo** |
+    
+    **ENTRENAMIENTO:** 4-6 horas (una sola vez)
+end legend
+
+@enduml

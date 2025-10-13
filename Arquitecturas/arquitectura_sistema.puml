@@ -1,0 +1,332 @@
+@startuml Arquitectura_Sistema_Resumen_Videos
+!theme cerulean-outline
+skinparam backgroundColor #F8F9FA
+skinparam shadowing true
+skinparam linetype ortho
+skinparam roundcorner 15
+skinparam defaultFontSize 12
+skinparam defaultFontName Segoe UI
+
+' Estilos personalizados
+skinparam actor {
+    BackgroundColor #4A90E2
+    BorderColor #2E5C8A
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #2E5C8A
+    FontColor #2C3E50
+    BorderThickness 2
+}
+
+skinparam note {
+    BackgroundColor #FFF9E6
+    BorderColor #F39C12
+}
+
+skinparam database {
+    BackgroundColor #E8F5E9
+    BorderColor #4CAF50
+}
+
+skinparam storage {
+    BackgroundColor #E3F2FD
+    BorderColor #2196F3
+}
+
+title **Sistema de Resumen Automático de Videos Educativos**\n**Arquitectura Completa con Transfer Learning**
+
+' ==============================================================================
+' CAPA DE ENTRADA
+' ==============================================================================
+package "📥 CAPA DE ENTRADA" as input_layer #E3F2FD {
+    actor "👤 Usuario" as user
+    storage "📹 Videos\nEducativos" as videos #B3E5FC {
+        note right
+            • Formato: MP4, AVI, MKV
+            • Audio: Español/Inglés
+            • Duración: 10min - 2hrs
+        end note
+    }
+}
+
+' ==============================================================================
+' CAPA DE PROCESAMIENTO DE AUDIO
+' ==============================================================================
+package "🎵 CAPA DE TRANSCRIPCIÓN" as transcription_layer #FFF9C4 {
+    component "🎤 Extractor\nde Audio" as audio_extractor {
+        note bottom
+            **Librería:** MoviePy
+            • Extrae audio del video
+            • Formato: WAV, MP3
+            • Sample rate: 16kHz
+        end note
+    }
+    
+    component "🧠 Modelo Whisper\n(OpenAI)" as whisper #E1BEE7 {
+        note bottom
+            **Modelo Pre-entrenado**
+            • Tipo: Speech-to-Text
+            • Tamaño: base/small/medium
+            • Multilingüe (es, en)
+            • **NO requiere entrenamiento**
+        end note
+    }
+    
+    storage "📝 Transcripciones\n(JSON)" as transcripts #FFF9C4
+}
+
+' ==============================================================================
+' CAPA DE ENTRENAMIENTO
+' ==============================================================================
+package "🏋️ CAPA DE ENTRENAMIENTO (Una sola vez)" as training_layer #E8F5E9 {
+    database "📊 Dataset MLSUM\n(Español)" as dataset_mlsum #C8E6C9 {
+        note right
+            **Dataset Público**
+            • 266K artículos + resúmenes
+            • Idioma: Español
+            • Fuente: Noticias españolas
+            • Split: Train/Val/Test
+        end note
+    }
+    
+    component "🔤 Tokenizador\nmT5" as tokenizer #A5D6A7 {
+        note bottom
+            • Convierte texto → números
+            • Vocabulario: SentencePiece
+            • Max length: 512 tokens
+        end note
+    }
+    
+    component "🧠 Modelo mT5-small\n(Base)" as mt5_base #81C784 {
+        note bottom
+            **Modelo Pre-entrenado**
+            • 300M parámetros
+            • Multilingüe (102 idiomas)
+            • Arquitectura: Encoder-Decoder
+            • Transfer Learning
+        end note
+    }
+    
+    component "⚙️ Fine-Tuning\nTrainer" as trainer #66BB6A {
+        note bottom
+            **PyTorch + Transformers**
+            • Seq2SeqTrainer
+            • Optimizador: AdamW
+            • FP16 (RTX 3050)
+            • Early Stopping
+            • Checkpoints automáticos
+        end note
+    }
+    
+    storage "💾 Modelo\nEntrenado" as trained_model #4CAF50 {
+        note right
+            **Modelo Especializado**
+            • Fine-tuned en español
+            • ROUGE-1: ~0.42
+            • Guardado: pytorch_model.bin
+            • Listo para inferencia
+        end note
+    }
+}
+
+' ==============================================================================
+' CAPA DE INFERENCIA
+' ==============================================================================
+package "🚀 CAPA DE INFERENCIA (Uso en producción)" as inference_layer #E1F5FE {
+    component "📄 Preprocesador\nde Texto" as preprocessor #B3E5FC {
+        note bottom
+            • Limpieza de texto
+            • Tokenización
+            • Prefijo: "resumir:"
+        end note
+    }
+    
+    component "🧠 Modelo mT5\n(Fine-tuned)" as mt5_finetuned #81D4FA {
+        note bottom
+            **Modelo Cargado**
+            • Lee: trained_model/
+            • Genera resúmenes
+            • Beam search (k=4)
+            • Max length: 128 tokens
+        end note
+    }
+    
+    component "📝 Post-procesador" as postprocessor #4FC3F7 {
+        note bottom
+            • Detokenización
+            • Limpieza final
+            • Formato salida
+        end note
+    }
+    
+    storage "📄 Resúmenes\nFinales" as summaries #03A9F4
+}
+
+' ==============================================================================
+' CAPA DE SALIDA
+' ==============================================================================
+package "📤 CAPA DE PRESENTACIÓN" as output_layer #F3E5F5 {
+    component "🌐 Interfaz Web\n(HTML)" as web_interface #CE93D8 {
+        note bottom
+            • Visualización de resúmenes
+            • Comparación original vs resumen
+            • Métricas de calidad
+            • Download PDF/TXT
+        end note
+    }
+    
+    storage "💾 Base de Datos\n(Historial)" as database #BA68C8 {
+        note right
+            • Videos procesados
+            • Resúmenes generados
+            • Métricas de calidad
+            • Timestamps
+        end note
+    }
+}
+
+' ==============================================================================
+' CAPA DE MONITOREO
+' ==============================================================================
+package "📊 CAPA DE MONITOREO" as monitoring_layer #FFF3E0 {
+    component "📈 TensorBoard" as tensorboard #FFE082 {
+        note bottom
+            • Loss en tiempo real
+            • Métricas ROUGE
+            • GPU usage
+            • Learning rate
+        end note
+    }
+    
+    component "📋 Logger" as logger #FFD54F {
+        note bottom
+            • Logs detallados
+            • Errores y warnings
+            • Progreso entrenamiento
+            • Performance metrics
+        end note
+    }
+}
+
+' ==============================================================================
+' HARDWARE
+' ==============================================================================
+package "🖥️ INFRAESTRUCTURA" as hardware_layer #FFEBEE {
+    component "🎮 GPU RTX 3050\n(4GB VRAM)" as gpu #EF9A9A {
+        note bottom
+            **Hardware**
+            • CUDA 12.8
+            • PyTorch 2.7.1
+            • FP16 support
+            • Batch size: 2
+        end note
+    }
+    
+    storage "💾 Almacenamiento" as storage #E57373 {
+        note right
+            • Models: 5GB
+            • Datasets: 2GB
+            • Videos: Variable
+            • Logs: 500MB
+        end note
+    }
+}
+
+' ==============================================================================
+' FLUJO PRINCIPAL - ENTRENAMIENTO (Una sola vez)
+' ==============================================================================
+dataset_mlsum -down-> tokenizer : "Cargar dataset\n(10K ejemplos)"
+tokenizer -down-> mt5_base : "Tokenizar\n(texto → números)"
+mt5_base -down-> trainer : "Inicializar modelo"
+trainer -down-> trained_model : "Fine-tuning\n(3 épocas, 4-6 hrs)"
+trainer .up.> tensorboard : "Métricas en\ntiempo real"
+trainer .up.> logger : "Logging"
+trainer ..> gpu : "Usa GPU"
+
+note on link
+    **FASE 1: ENTRENAMIENTO**
+    • Solo se hace UNA VEZ
+    • Duración: 4-6 horas
+    • Resultado: Modelo especializado
+end note
+
+' ==============================================================================
+' FLUJO PRINCIPAL - INFERENCIA (Cada video nuevo)
+' ==============================================================================
+user -right-> videos : "Sube video"
+videos -down-> audio_extractor : "Procesar video"
+audio_extractor -down-> whisper : "Audio extraído"
+whisper -down-> transcripts : "Transcribir\n(2-5 min)"
+transcripts -down-> preprocessor : "Texto bruto"
+preprocessor -down-> mt5_finetuned : "Texto tokenizado"
+trained_model .right.> mt5_finetuned : "Cargar\nmodelo\nentrenado"
+mt5_finetuned -down-> postprocessor : "Generar resumen\n(30 seg)"
+postprocessor -down-> summaries : "Resumen final"
+summaries -down-> web_interface : "Mostrar"
+web_interface -down-> database : "Guardar historial"
+web_interface -left-> user : "Visualizar"
+
+note on link
+    **FASE 2: INFERENCIA**
+    • Se ejecuta para CADA VIDEO
+    • Duración: 5-10 minutos
+    • Usa modelo ya entrenado
+end note
+
+' ==============================================================================
+' CONEXIONES ADICIONALES
+' ==============================================================================
+gpu .up.> mt5_finetuned : "Acelera inferencia"
+storage .up.> trained_model : "Persistencia"
+storage .up.> videos : "Almacena"
+storage .up.> database : "Almacena"
+
+' ==============================================================================
+' LEYENDA
+' ==============================================================================
+legend bottom
+    |= Símbolo |= Descripción |
+    | 🧠 | Modelo de IA (Transformer) |
+    | 📊 | Dataset o Base de Datos |
+    | ⚙️ | Proceso de Entrenamiento |
+    | 🚀 | Proceso de Inferencia |
+    | 💾 | Almacenamiento Persistente |
+    | 🎮 | Hardware (GPU) |
+    | 📈 | Monitoreo y Métricas |
+    
+    **Colores:**
+    • 🟦 Azul: Entrada/Salida
+    • 🟨 Amarillo: Transcripción
+    • 🟩 Verde: Entrenamiento
+    • 🟦 Celeste: Inferencia
+    • 🟪 Morado: Presentación
+    • 🟧 Naranja: Monitoreo
+    • 🟥 Rojo: Infraestructura
+end legend
+
+' ==============================================================================
+' NOTAS ADICIONALES
+' ==============================================================================
+note top of training_layer
+    **ENTRENAMIENTO (FASE 1)**
+    ✓ Se ejecuta UNA SOLA VEZ
+    ✓ Transfer Learning: usa conocimiento previo de mT5
+    ✓ Fine-tuning: especializa en resumir textos en español
+    ✓ Dataset: MLSUM (10,000 ejemplos)
+    ✓ Tiempo: 4-6 horas en RTX 3050
+    ✓ Resultado: Modelo especializado guardado
+end note
+
+note top of inference_layer
+    **INFERENCIA (FASE 2)**
+    ✓ Se ejecuta para CADA VIDEO nuevo
+    ✓ Usa el modelo YA ENTRENADO
+    ✓ No requiere dataset
+    ✓ Tiempo: 5-10 minutos por video
+    ✓ Entrada: Transcripción del video
+    ✓ Salida: Resumen generado
+end note
+
+@enduml

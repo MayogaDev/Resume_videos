@@ -1,0 +1,146 @@
+@startuml Pipeline_Flujo_Lineal
+!theme blueprint
+skinparam backgroundColor #F8F9FA
+skinparam shadowing false
+skinparam defaultFontSize 13
+skinparam ArrowThickness 3
+
+title **Pipeline Final - Propuesta de Resumen Automático de Videos Educativos**\n**Transfer Learning: Whisper (OpenAI) + mT5 Fine-tuned (Google)**
+
+' Estilos de componentes
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #1976D2
+    BorderThickness 2
+    RoundCorner 15
+}
+
+skinparam note {
+    BackgroundColor #FFF9E6
+    BorderColor #F39C12
+}
+
+' ==============================================================================
+' ENTRENAMIENTO PREVIO (ARRIBA)
+' ==============================================================================
+package "**ENTRENAMIENTO PREVIO** (Una sola vez - 4-6 horas)" as training #E8F5E9 {
+    
+    rectangle "📊\n**Dataset MLSUM**\n10K ejemplos\nEspañol" as dataset #C8E6C9
+    
+    rectangle "🔤\n**Tokenizar**\nSentencePiece" as tokenize #A5D6A7
+    
+    rectangle "🧠\n**mT5-small**\nBase\n(Google)" as mt5_base #81C784
+    
+    rectangle "🏋️\n**Fine-tuning**\nSeq2SeqTrainer\nRTX 3050" as finetuning #66BB6A
+    
+    rectangle "💾\n**Modelo\nEntrenado**\nEspecializado" as trained_model #4CAF50
+    
+    dataset -right-> tokenize
+    tokenize -right-> mt5_base
+    mt5_base -right-> finetuning
+    finetuning -right-> trained_model
+    
+    note bottom of training
+        **Transfer Learning:**
+        • mT5 pre-entrenado (Google) → Fine-tuning (nosotros)
+        • Dataset: MLSUM español (artículos + resúmenes)
+        • GPU: RTX 3050 (4GB VRAM, FP16)
+        • Métricas: ROUGE-1 ~0.42
+    end note
+}
+
+' ==============================================================================
+' PIPELINE DE INFERENCIA (ABAJO)
+' ==============================================================================
+package "**PIPELINE DE INFERENCIA** (Cada video - 5-10 min)" as inference #E3F2FD {
+    
+    rectangle "👤\n**Usuario**\nSube video" as user #BBDEFB
+    
+    rectangle "🎵\n**Extractor**\nAudio\n(MoviePy)" as extractor #90CAF9
+    
+    rectangle "🎤\n**Whisper**\nTranscripción\n(OpenAI)" as whisper #64B5F6
+    
+    rectangle "📝\n**Preproc.**\nTokenizar\nPrefijo" as preproc #42A5F5
+    
+    rectangle "🧠\n**mT5**\nFine-tuned\nResumen" as mt5_finetuned #2196F3
+    
+    rectangle "✨\n**Postproc.**\nFormatear\nMétricas" as postproc #1E88E5
+    
+    rectangle "🌐\n**Web**\nVisualizar\nHTML" as web #1976D2
+    
+    rectangle "👤\n**Usuario**\nVe resumen" as user_result #1565C0
+    
+    user -right-> extractor : "MP4/AVI\n30 seg"
+    extractor -right-> whisper : "WAV 16kHz\n2-3 min"
+    whisper -right-> preproc : "Texto\n10 seg"
+    preproc -right-> mt5_finetuned : "Tokens\n1-2 min"
+    mt5_finetuned -right-> postproc : "Resumen\n20 seg"
+    postproc -right-> web : "HTML\n10 seg"
+    web -right-> user_result : "Resultado"
+    
+    note bottom of inference
+        **Modelos:**
+        • **Whisper**: Pre-entrenado (NO requiere training)
+        • **mT5**: Pre-entrenado + Fine-tuned (usa modelo entrenado)
+        
+        **Tiempo total:** 5-10 minutos por video
+    end note
+}
+
+' ==============================================================================
+' CONEXIÓN ENTRE ENTRENAMIENTO E INFERENCIA
+' ==============================================================================
+trained_model .down.> mt5_finetuned : "Cargar\nmodelo\nentrenado"
+
+note right of trained_model
+    **Modelo guardado:**
+    • pytorch_model.bin (1.2GB)
+    • config.json
+    • tokenizer files
+end note
+
+note left of whisper
+    **Pre-entrenado:**
+    • 680K horas audio
+    • 99 idiomas
+    • NO requiere training
+    • 74M parámetros
+end note
+
+note right of mt5_finetuned
+    **Fine-tuned:**
+    • Especializado español
+    • 300M parámetros
+    • Beam search (k=4)
+    • Max output: 128 tokens
+end note
+
+' ==============================================================================
+' CUADRO DE RESUMEN
+' ==============================================================================
+rectangle "**RESUMEN DE LA PROPUESTA**" as summary #FFF9C4 {
+    note as summary_note
+        **ARQUITECTURA:**
+        1. **Transcripción:** Whisper (OpenAI) - Pre-entrenado
+        2. **Resumen:** mT5 (Google) - Pre-entrenado + Fine-tuned
+        
+        **TÉCNICA:** Transfer Learning + Fine-tuning
+        
+        **DATASET:** MLSUM (español) - 10,000 ejemplos
+        
+        **HARDWARE:** RTX 3050 (4GB VRAM) + PyTorch + CUDA
+        
+        **RESULTADOS:**
+        • Tiempo entrenamiento: 4-6 horas (una vez)
+        • Tiempo inferencia: 5-10 min (cada video)
+        • Calidad: ROUGE-1 ~0.42 (estado del arte)
+        
+        **VENTAJAS:**
+        ✓ No entrenar desde cero
+        ✓ Aprovecha modelos pre-entrenados
+        ✓ Especialización mediante fine-tuning
+        ✓ Resultados de alta calidad
+    end note
+}
+
+@enduml

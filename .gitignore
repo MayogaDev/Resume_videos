@@ -1,0 +1,146 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+.conda/
+conda-meta/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.spyderproject
+.spyproject
+
+# Models & Data - ARCHIVOS PESADOS
+# Modelos entrenados (muy pesados)
+src/models/
+models/
+*.bin
+*.pt
+*.pth
+*.safetensors
+optimizer.pt
+scheduler.pt
+scaler.pt
+*.ckpt
+*.h5
+*.pkl
+*.pickle
+
+# Cache y datos procesados
+src/data/cache/
+data/cache/
+data/raw/
+data/processed/
+*.arrow
+*.parquet
+*.feather
+
+# Archivos multimedia (pesados)
+*.mp4
+*.mp3
+*.wav
+*.avi
+*.mov
+*.mkv
+*.flv
+*.webm
+*.m4a
+*.aac
+videos/
+audio/
+
+# Checkpoints y estados de entrenamiento
+checkpoint-*/
+runs/
+tensorboard_logs/
+*.rng_state
+trainer_state.json
+training_args.bin
+
+# Logs y archivos temporales
+src/logs/
+logs/
+*.log
+*.out
+*.tfevents.*
+*.pid
+tmp/
+temp/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# LaTeX build files
+documentation/build/
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.toc
+*.bbl
+*.blg
+
+# Datasets externos (muy pesados)
+*.csv
+*.json.gz
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*.tmp
+*.temp
+
+# Configuraciones específicas del proyecto
+config_local.py
+secrets.py
+api_keys.txt
+
+# Archivos de caché varios
+.cache/
+.pytest_cache/
+.coverage
+.nyc_output
+.sass-cache/
+
+# GPU y CUDA específicos
+*.cu.o
+*.ptx

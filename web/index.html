@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Summarizer AI - Resumen Automático de Videos</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-video"></i>
+                <span>Video Summarizer AI</span>
+            </div>
+            <nav class="nav">
+                <a href="#home" class="nav-link active">Inicio</a>
+                <a href="#features" class="nav-link">Características</a>
+                <a href="#demo" class="nav-link">Demo</a>
+                <a href="#about" class="nav-link">Acerca de</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Transforma Videos en Resúmenes Inteligentes
+                </h1>
+                <p class="hero-subtitle">
+                    Usa el poder de la IA para transcribir y resumir tus videos automáticamente.
+                    Whisper + mT5 trabajando juntos por ti.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="scrollToDemo()">
+                        <i class="fas fa-rocket"></i> Probar Ahora
+                    </button>
+                    <button class="btn btn-secondary" onclick="showInfo()">
+                        <i class="fas fa-info-circle"></i> Más Información
+                    </button>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <i class="fas fa-clock"></i>
+                    <h3>95%</h3>
+                    <p>Ahorro de Tiempo</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-language"></i>
+                    <h3>40+</h3>
+                    <p>Idiomas Soportados</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-bolt"></i>
+                    <h3>GPU</h3>
+                    <p>Aceleración CUDA</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Características Principales</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <h3>Transcripción con Whisper</h3>
+                    <p>Utiliza OpenAI Whisper para transcripciones precisas en múltiples idiomas con detección automática.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>Resumen Inteligente</h3>
+                    <p>Modelo mT5 entrenado específicamente para generar resúmenes concisos y coherentes en español.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Métricas ROUGE</h3>
+                    <p>Evaluación automática de calidad usando métricas ROUGE-1, ROUGE-2 y ROUGE-L.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <h3>Exportar Resultados</h3>
+                    <p>Descarga transcripciones y resúmenes en formatos TXT y JSON para uso posterior.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <h3>Configuración Avanzada</h3>
+                    <p>Ajusta parámetros como longitud del resumen, modelo Whisper, beams, y más.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>Procesamiento Rápido</h3>
+                    <p>Optimizado para GPU con soporte CUDA para procesamiento en tiempo récord.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo-section" id="demo">
+        <div class="container">
+            <h2 class="section-title">Prueba el Procesador</h2>
+            <div class="demo-container">
+                <!-- Upload Area -->
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Arrastra tu video aquí</h3>
+                        <p>o haz clic para seleccionar</p>
+                        <input type="file" id="videoInput" accept="video/*" style="display: none;">
+                        <button class="btn btn-upload" onclick="document.getElementById('videoInput').click()">
+                            <i class="fas fa-folder-open"></i> Seleccionar Video
+                        </button>
+                        <p class="upload-info">Soporta: MP4, AVI, MOV, MKV (máx. 2GB)</p>
+                    </div>
+
+                    <!-- Video Preview -->
+                    <div class="video-preview" id="videoPreview" style="display: none;">
+                        <video id="videoPlayer" controls></video>
+                        <div class="video-info">
+                            <p><strong>Archivo:</strong> <span id="fileName"></span></p>
+                            <p><strong>Tamaño:</strong> <span id="fileSize"></span></p>
+                            <p><strong>Duración:</strong> <span id="videoDuration"></span></p>
+                        </div>
+                    </div>
+
+                    <!-- Configuration -->
+                    <div class="config-section">
+                        <h3><i class="fas fa-cog"></i> Configuración</h3>
+                        <div class="config-grid">
+                            <div class="config-item">
+                                <label for="whisperModel">Modelo Whisper</label>
+                                <select id="whisperModel" class="config-select">
+                                    <option value="tiny">Tiny (Rápido)</option>
+                                    <option value="base" selected>Base (Balanceado)</option>
+                                    <option value="small">Small (Preciso)</option>
+                                    <option value="medium">Medium (Muy Preciso)</option>
+                                    <option value="large">Large (Máxima Precisión)</option>
+                                </select>
+                            </div>
+                            <div class="config-item">
+                                <label for="summaryLength">Longitud del Resumen</label>
+                                <select id="summaryLength" class="config-select">
+                                    <option value="64">Muy Corto (64 tokens)</option>
+                                    <option value="128" selected>Corto (128 tokens)</option>
+                                    <option value="256">Medio (256 tokens)</option>
+                                    <option value="512">Largo (512 tokens)</option>
+                                </select>
+                            </div>
+                            <div class="config-item">
+                                <label for="numBeams">Beams (Calidad)</label>
+                                <select id="numBeams" class="config-select">
+                                    <option value="1">1 (Rápido)</option>
+                                    <option value="4" selected>4 (Recomendado)</option>
+                                    <option value="8">8 (Alta Calidad)</option>
+                                </select>
+                            </div>
+                            <div class="config-item">
+                                <label for="language">Idioma</label>
+                                <select id="language" class="config-select">
+                                    <option value="auto" selected>Detectar Automáticamente</option>
+                                    <option value="es">Español</option>
+                                    <option value="en">English</option>
+                                    <option value="fr">Français</option>
+                                    <option value="de">Deutsch</option>
+                                    <option value="it">Italiano</option>
+                                    <option value="pt">Português</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-process" onclick="processVideo()">
+                            <i class="fas fa-play"></i> Procesar Video
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Area -->
+                <div class="results-section" id="resultsSection" style="display: none;">
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="showTab('summary')">
+                            <i class="fas fa-file-alt"></i> Resumen
+                        </button>
+                        <button class="tab-btn" onclick="showTab('transcription')">
+                            <i class="fas fa-align-left"></i> Transcripción
+                        </button>
+                        <button class="tab-btn" onclick="showTab('stats')">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </button>
+                    </div>
+
+                    <div class="tab-content active" id="summaryTab">
+                        <div class="result-card">
+                            <div class="result-header">
+                                <h3><i class="fas fa-sparkles"></i> Resumen Generado</h3>
+                                <button class="btn-icon" onclick="copyText('summaryText')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="result-content">
+                                <p id="summaryText">El resumen aparecerá aquí después del procesamiento...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="transcriptionTab">
+                        <div class="result-card">
+                            <div class="result-header">
+                                <h3><i class="fas fa-microphone-alt"></i> Transcripción Completa</h3>
+                                <button class="btn-icon" onclick="copyText('transcriptionText')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="result-content">
+                                <p id="transcriptionText">La transcripción aparecerá aquí después del procesamiento...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="statsTab">
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <i class="fas fa-clock"></i>
+                                <h4>Tiempo de Procesamiento</h4>
+                                <p class="stat-value" id="processingTime">--</p>
+                            </div>
+                            <div class="stat-box">
+                                <i class="fas fa-file-word"></i>
+                                <h4>Palabras en Transcripción</h4>
+                                <p class="stat-value" id="wordCount">--</p>
+                            </div>
+                            <div class="stat-box">
+                                <i class="fas fa-compress"></i>
+                                <h4>Tasa de Compresión</h4>
+                                <p class="stat-value" id="compressionRate">--</p>
+                            </div>
+                            <div class="stat-box">
+                                <i class="fas fa-language"></i>
+                                <h4>Idioma Detectado</h4>
+                                <p class="stat-value" id="detectedLanguage">--</p>
+                            </div>
+                            <div class="stat-box">
+                                <i class="fas fa-star"></i>
+                                <h4>Confianza</h4>
+                                <p class="stat-value" id="confidence">--</p>
+                            </div>
+                            <div class="stat-box">
+                                <i class="fas fa-brain"></i>
+                                <h4>Modelo Usado</h4>
+                                <p class="stat-value" id="modelUsed">--</p>
+                            </div>
+                        </div>
+                        <div class="download-section">
+                            <h3><i class="fas fa-download"></i> Descargar Resultados</h3>
+                            <div class="download-buttons">
+                                <button class="btn btn-download" onclick="downloadJSON()">
+                                    <i class="fas fa-file-code"></i> Descargar JSON
+                                </button>
+                                <button class="btn btn-download" onclick="downloadTXT()">
+                                    <i class="fas fa-file-alt"></i> Descargar TXT
+                                </button>
+                                <button class="btn btn-download" onclick="downloadTranscription()">
+                                    <i class="fas fa-file-lines"></i> Solo Transcripción
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-section" id="progressSection" style="display: none;">
+                        <div class="progress-info">
+                            <span id="progressText">Procesando...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="container">
+            <h2 class="section-title">Tecnología de Vanguardia</h2>
+            <div class="tech-stack">
+                <div class="tech-card">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/TensorFlowLogo.svg/200px-TensorFlowLogo.svg.png" alt="TensorFlow">
+                    <h4>TensorFlow</h4>
+                    <p>Framework de ML</p>
+                </div>
+                <div class="tech-card">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/PyTorch_logo_black.svg/200px-PyTorch_logo_black.svg.png" alt="PyTorch">
+                    <h4>PyTorch</h4>
+                    <p>Deep Learning</p>
+                </div>
+                <div class="tech-card">
+                    <img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="Hugging Face" style="width: 60px;">
+                    <h4>Hugging Face</h4>
+                    <p>Transformers</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <h4>Whisper</h4>
+                    <p>OpenAI ASR</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <h4>mT5</h4>
+                    <p>Multilingual T5</p>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3><i class="fas fa-graduation-cap"></i> Proyecto Académico</h3>
+                    <p>Desarrollado como Trabajo Interdisciplinar III en la Universidad Nacional de San Agustín (UNSA).</p>
+                </div>
+                <div class="info-card">
+                    <h3><i class="fas fa-code"></i> Open Source</h3>
+                    <p>Código disponible en GitHub bajo licencia MIT. Contribuciones bienvenidas.</p>
+                </div>
+                <div class="info-card">
+                    <h3><i class="fas fa-rocket"></i> En Desarrollo</h3>
+                    <p>Proyecto activo con nuevas características en camino: caché, base de datos, Docker.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4><i class="fas fa-video"></i> Video Summarizer AI</h4>
+                    <p>Transformando videos en conocimiento accesible mediante inteligencia artificial.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Enlaces</h4>
+                    <a href="https://github.com/MayogaDev/Resume_videos" target="_blank">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="#" onclick="showDocumentation()">
+                        <i class="fas fa-book"></i> Documentación
+                    </a>
+                </div>
+                <div class="footer-section">
+                    <h4>Tecnologías</h4>
+                    <p>Whisper • mT5 • PyTorch • Transformers</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Video Summarizer AI - UNSA. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
