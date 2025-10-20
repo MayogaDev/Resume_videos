@@ -1,0 +1,97 @@
+# Docker Compose configuration for Resume Videos
+# Note: version attribute is deprecated in Compose v2
+
+services:
+  # Servicio API REST (Flask)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resume_videos_api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-5000}:5000"
+    volumes:
+      # Persistencia de base de datos
+      - ./database:/app/database
+      # Outputs generados
+      - ./outputs:/app/outputs
+      # Videos de entrada
+      - ./videos:/app/videos
+      # Modelos locales
+      - ./models:/app/models
+      # Cache de modelos HuggingFace
+      - huggingface_cache:/root/.cache/huggingface
+      # Logs
+      - ./logs:/app/logs
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_DEBUG=${FLASK_DEBUG:-0}
+      - DATABASE_PATH=/app/database/resume_videos.db
+      - OUTPUT_DIR=/app/outputs
+      - VIDEO_DIR=/app/videos
+      - MODEL_PATH=/app/models/mt5-xlsum
+      - WHISPER_MODEL=${WHISPER_MODEL:-tiny}
+      - HF_HOME=/root/.cache/huggingface
+    command: python scripts/main.py api
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - resume_videos_network
+
+  # Servicio Web UI (Gradio)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resume_videos_web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-7860}:7860"
+    volumes:
+      # Persistencia de base de datos (compartida con API)
+      - ./database:/app/database
+      # Outputs generados
+      - ./outputs:/app/outputs
+      # Videos de entrada
+      - ./videos:/app/videos
+      # Modelos locales
+      - ./models:/app/models
+      # Cache de modelos HuggingFace (compartida con API)
+      - huggingface_cache:/root/.cache/huggingface
+      # Logs
+      - ./logs:/app/logs
+    environment:
+      - API_URL=http://api:5000
+      - DATABASE_PATH=/app/database/resume_videos.db
+      - OUTPUT_DIR=/app/outputs
+      - VIDEO_DIR=/app/videos
+      - MODEL_PATH=/app/models/mt5-xlsum
+      - WHISPER_MODEL=${WHISPER_MODEL:-tiny}
+      - HF_HOME=/root/.cache/huggingface
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+    command: python scripts/main.py web
+    healthcheck:
+      disable: true
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - resume_videos_network
+
+# Volúmenes nombrados
+volumes:
+  huggingface_cache:
+    driver: local
+    name: resume_videos_huggingface_cache
+
+# Red personalizada
+networks:
+  resume_videos_network:
+    driver: bridge
+    name: resume_videos_net

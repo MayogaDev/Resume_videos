@@ -144,3 +144,31 @@ api_keys.txt
 # GPU y CUDA específicos
 *.cu.o
 *.ptx
+
+# Nueva estructura modular
+database/*.db
+database/*.db-journal
+outputs/
+.cache/
+logs/
+
+# Archivos temporales de testing
+test_*.py
+transcription_output.txt
+nul
+
+# Documentación personal y notas de trabajo
+docs/
+*.md
+!README.md
+!README-Docker.md
+
+# Carpetas antiguas eliminadas
+old-documentation/
+old-helpers/
+Arquitecturas/
+helpers/
+documentation/
+notebooks/
+images/
+src/

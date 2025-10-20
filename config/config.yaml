@@ -1,0 +1,105 @@
+# ==============================================
+# Configuración del Sistema - Resume Videos
+# ==============================================
+
+# Modelos
+models:
+  whisper:
+    model_size: "base"  # tiny, base, small, medium, large
+    language: "es"
+    device: "cuda"  # cuda, cpu, cuda:0, cuda:1
+    compute_type: "float16"  # float16, float32
+
+  summarizer:
+    model_path: "backend/models/mt5-video-summarizer"
+    max_length: 150
+    min_length: 30
+    num_beams: 4
+    temperature: 1.0
+    top_p: 0.9
+    repetition_penalty: 2.0
+    length_penalty: 1.0
+    no_repeat_ngram_size: 3
+
+# Base de datos
+database:
+  path: "database/resume_videos.db"
+  backup_enabled: true
+  backup_dir: "database/backups"
+
+# API REST
+api:
+  host: "0.0.0.0"
+  port: 5000
+  debug: false
+  cors_enabled: true
+  cors_origins:
+    - "*"
+  # Para producción, especificar:
+  # cors_origins:
+  #   - "http://localhost:3000"
+  #   - "https://midominio.com"
+
+# Frontend Web
+web:
+  host: "0.0.0.0"
+  port: 7860
+  share: false
+  server_name: null
+  ssl_verify: true
+
+# Procesamiento
+processing:
+  # Límites
+  max_video_size_mb: 500
+  max_duration_seconds: 7200  # 2 horas
+
+  # Directorios
+  output_dir: "outputs"
+  temp_dir: "temp"
+
+  # Cache
+  enable_cache: true
+  cache_dir: ".cache"
+
+  # Cleanup
+  cleanup_audio: true
+  cleanup_temp: true
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/app.log"
+  max_bytes: 10485760  # 10 MB
+  backup_count: 5
+
+# Performance
+performance:
+  # Threads
+  num_workers: 4
+
+  # GPU
+  use_gpu: true
+  gpu_device: 0
+  mixed_precision: true
+
+  # Batch processing
+  batch_size: 4
+  prefetch_factor: 2
+
+# Features
+features:
+  # Activar/desactivar funcionalidades
+  transcription: true
+  summarization: true
+  translation: false  # Futuro
+  sentiment_analysis: false  # Futuro
+  entity_recognition: false  # Futuro
+
+# Metrics
+metrics:
+  enabled: true
+  export_format: "json"  # json, csv
+  include_timestamps: true
+  include_segments: true

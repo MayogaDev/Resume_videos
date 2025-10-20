@@ -1,0 +1,32 @@
+# Docker Compose - Development overrides
+# Configuración adicional para desarrollo
+# Uso: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  api:
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Montar código fuente para hot-reload
+      - ./backend:/app/backend
+      - ./scripts:/app/scripts
+      - ./config:/app/config
+    command: >
+      sh -c "pip install -e . &&
+             python scripts/main.py api"
+
+  web:
+    environment:
+      - LOG_LEVEL=DEBUG
+      - GRADIO_DEBUG=1
+    volumes:
+      # Montar código fuente para hot-reload
+      - ./frontend:/app/frontend
+      - ./backend:/app/backend
+      - ./scripts:/app/scripts
+      - ./config:/app/config
+    command: >
+      sh -c "pip install -e . &&
+             python scripts/main.py web"

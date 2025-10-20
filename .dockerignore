@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation
+*.md
+docs/
+
+# Logs
+*.log
+logs/
+
+# Database (solo para build, se montará como volumen)
+*.db
+*.sqlite
+*.sqlite3
+
+# Output files (se montarán como volúmenes)
+outputs/
+videos/
+models/local/
+
+# Cache de modelos (se descargará en el contenedor)
+.cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS
+Thumbs.db
+nul
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Scripts de desarrollo
+scripts/check_cache.py
+scripts/test_*.py
+test_*.py

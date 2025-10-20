@@ -1,0 +1,4 @@
+"""
+Frontend - Interfaces de usuario
+"""
+__version__ = "2.0.0"
