@@ -9,7 +9,6 @@ Resume_videos/
 ├── backend/              # Backend - API REST + Lógica de negocio
 ├── frontend/             # Frontend - Interfaces web y CLI
 ├── database/             # Base de datos SQLite
-├── docs/                 # Documentación completa
 ├── config/               # Configuraciones
 ├── scripts/              # Scripts de utilidad
 ├── tests/                # Tests y datos de prueba
@@ -78,16 +77,6 @@ print(result['summary']['text'])
 - **Procesamiento por lotes**
 - **Historial completo**
 
-## Documentación
-
-| Documento | Descripción |
-|-----------|-------------|
-| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Inicio rápido (5 minutos) |
-| [docs/ESTRUCTURA.md](docs/ESTRUCTURA.md) | Estructura detallada del proyecto |
-| [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) | Guía de migración |
-| [docs/api/README.md](docs/api/README.md) | Documentación API REST |
-| [docs/README.md](docs/README.md) | Índice completo de documentación |
-
 ## Uso del Sistema
 
 ### Verificar Instalación
@@ -128,8 +117,6 @@ POST /api/process             # Procesar video
 GET  /api/video/history       # Historial de un video
 GET  /api/videos              # Listar todos los videos
 ```
-
-Ver documentación completa en [docs/api/README.md](docs/api/README.md)
 
 ## Tecnologías
 
@@ -220,13 +207,6 @@ pytest --cov=backend tests/
 Proyecto educativo - Universidad Nacional de San Agustín (UNSA)
 Trabajo Interdisciplinar III - X Semestre
 Octubre 2025
-
-## Soporte
-
-- **Documentación**: [docs/](docs/)
-- **Guía rápida**: [docs/QUICKSTART.md](docs/QUICKSTART.md)
-- **Ejemplos**: [docs/notebooks/](docs/notebooks/)
-- **Issues**: Reportar en el repositorio
 
 ---
 
