@@ -30,6 +30,7 @@ try:
     from backend.core.extractive_summarizer import HybridSummarizer
     from backend.core.text_analyzer import TextAnalyzer
     from backend.services.video_processor import VideoProcessorService
+    from frontend.web.icons import icon, styled_icon
 except ImportError as e:
     print(f"❌ Error al importar módulos: {e}")
     print("\nAsegúrate de ejecutar desde el directorio raíz del proyecto")
@@ -40,7 +41,40 @@ class VideoSummarizerWebApp:
     """
     Aplicación web para resumir videos
     """
-    
+
+    @staticmethod
+    def _format_status_message(content, msg_type="info"):
+        """
+        Formatea un mensaje de estado con iconos y estilos
+
+        Args:
+            content: Contenido del mensaje (puede incluir HTML)
+            msg_type: Tipo de mensaje (info, success, warning, error, processing)
+        """
+        styles = {
+            "info": {"bg": "#eff6ff", "border": "#3b82f6", "icon": icon('info', 20, '#3b82f6')},
+            "success": {"bg": "#d1fae5", "border": "#10b981", "icon": styled_icon('check', 18, '#10b981', 'transparent')},
+            "warning": {"bg": "#fef3c7", "border": "#f59e0b", "icon": styled_icon('alert-triangle', 18, '#f59e0b', 'transparent')},
+            "error": {"bg": "#fee2e2", "border": "#ef4444", "icon": styled_icon('x', 18, '#ef4444', 'transparent')},
+            "processing": {"bg": "#f3e8ff", "border": "#8b5cf6", "icon": icon('loader', 20, '#8b5cf6', 'icon-spin')},
+        }
+
+        style = styles.get(msg_type, styles["info"])
+
+        return f"""
+        <div style="padding: 16px; background: {style['bg']}; border-left: 4px solid {style['border']};
+                    border-radius: 6px; margin: 8px 0; color: #1e293b;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="flex-shrink: 0; margin-top: 2px;">
+                    {style['icon']}
+                </div>
+                <div style="flex: 1;">
+                    {content}
+                </div>
+            </div>
+        </div>
+        """
+
     def __init__(self, modelo_path="models/mt5-video-summarizer-final"):
         """
         Inicializa la aplicación
@@ -62,17 +96,17 @@ class VideoSummarizerWebApp:
             whisper_model: Modelo de Whisper a usar
         """
         if self.inicializado:
-            return "✅ Modelos ya inicializados"
-        
+            return f"{styled_icon('check', 16, '#10b981', '#d1fae5')} Modelos ya inicializados"
+
         try:
-            print("🔄 Inicializando Whisper...")
+            print(f"🔄 Inicializando Whisper...")
             self.transcriber = VideoTranscriber(model_size=whisper_model)
 
-            print("🔄 Inicializando Resumidor Híbrido...")
+            print(f"🔄 Inicializando Resumidor Híbrido...")
             # Intentar cargar modelo abstractivo
             try:
                 abstractive = VideoSummarizer(model_path=self.modelo_path)
-                print("   ✅ Modelo abstractivo cargado")
+                print(f"   ✅ Modelo abstractivo cargado")
             except Exception as e:
                 print(f"   ⚠️ No se pudo cargar modelo abstractivo: {e}")
                 abstractive = None
@@ -81,10 +115,10 @@ class VideoSummarizerWebApp:
             self.summarizer = HybridSummarizer(abstractive_summarizer=abstractive)
 
             self.inicializado = True
-            return "✅ Modelos inicializados correctamente"
+            return f"{styled_icon('check', 16, '#10b981', '#d1fae5')} Modelos inicializados correctamente"
 
         except Exception as e:
-            return f"❌ Error al inicializar modelos: {str(e)}"
+            return f"{styled_icon('x', 16, '#ef4444', '#fee2e2')} Error al inicializar modelos: {str(e)}"
     
     def procesar_video(
         self,
@@ -105,7 +139,7 @@ class VideoSummarizerWebApp:
             progress: Objeto de progreso de Gradio
         """
         if video_file is None:
-            return None, "⚠️ Por favor sube un video", None, None, None
+            return None, self._format_status_message("<strong>Por favor sube un video</strong>", "warning"), None, None, None
 
         try:
             import time
@@ -118,58 +152,91 @@ class VideoSummarizerWebApp:
 
             # PASO 0: Validación
             progress(0, desc="🔍 Validando archivo...")
-            estado_inicial = f"""
-🔍 **Validando archivo...**
-
-📁 **Archivo:** {video_name}
-📊 **Tamaño:** {file_size_mb:.2f} MB
-🎤 **Modelo Whisper:** {whisper_model}
-⏱️ **Tiempo estimado:** {self._estimar_tiempo(file_size_mb)} minutos
-
-🔄 Iniciando procesamiento...
-            """
+            estado_inicial = self._format_status_message(f"""
+                <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                    {icon('search', 22, '#8b5cf6')}
+                    <span>Validando archivo...</span>
+                </h3>
+                <div style="display: grid; gap: 8px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('folder', 18, '#6366f1')}
+                        <span><strong>Archivo:</strong> {video_name}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('bar-chart', 18, '#6366f1')}
+                        <span><strong>Tamaño:</strong> {file_size_mb:.2f} MB</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('mic', 18, '#8b5cf6')}
+                        <span><strong>Modelo Whisper:</strong> {whisper_model}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('clock', 18, '#3b82f6')}
+                        <span><strong>Tiempo estimado:</strong> {self._estimar_tiempo(file_size_mb)}</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(139, 92, 246, 0.1); border-radius: 4px;">
+                    {icon('loader', 18, '#8b5cf6', 'icon-spin')}
+                    <em>Iniciando procesamiento...</em>
+                </div>
+            """, "processing")
             yield None, estado_inicial, None, None, None
             time.sleep(0.5)
 
             # Inicializar modelos
             progress(0.05, desc="🔧 Inicializando modelos...")
-            estado_init = f"""
-🔧 **Inicializando modelos de IA...**
-
-📁 Video: {video_name} ({file_size_mb:.2f} MB)
-🎤 Cargando Whisper {whisper_model}...
-🧠 Preparando sistema de resumen híbrido...
-
-💡 *Primera ejecución puede tardar más (descarga de modelos)*
-            """
+            estado_init = self._format_status_message(f"""
+                <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                    {icon('wrench', 22, '#8b5cf6')}
+                    <span>Inicializando modelos de IA...</span>
+                </h3>
+                <div style="display: grid; gap: 8px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('folder', 18, '#6366f1')}
+                        <span>Video: {video_name} ({file_size_mb:.2f} MB)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('mic', 18, '#8b5cf6')}
+                        <span>Cargando Whisper {whisper_model}...</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('brain', 18, '#a855f7')}
+                        <span>Preparando sistema de resumen híbrido...</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px;">
+                    {icon('lightbulb', 18, '#f59e0b')}
+                    <em>Cargando modelos de IA...</em>
+                </div>
+            """, "processing")
             yield None, estado_init, None, None, None
 
             init_msg = self.inicializar_modelos(whisper_model)
-            if "❌" in init_msg:
+            if 'Error' in init_msg:
                 yield None, init_msg, None, None, None
                 return
 
             # PASO 1: Transcripción (5-60%)
             progress(0.10, desc="🎬 Extrayendo audio...")
             estado_audio = f"""
-🎬 **[Paso 1/3] Extrayendo audio del video...**
+{icon('film', 20, '#8b5cf6')} **[Paso 1/3] Extrayendo audio del video...**
 
-📁 Video: {video_name}
-🔊 Convirtiendo a formato de audio optimizado...
+{icon('folder', 18, '#6366f1')} Video: {video_name}
+{icon('volume-2', 18, '#8b5cf6')} Convirtiendo a formato de audio optimizado...
 
-⏳ *Esto puede tardar según el tamaño del video*
+{icon('clock', 18, '#3b82f6')} *Esto puede tardar según el tamaño del video*
             """
             yield None, estado_audio, None, None, None
 
             progress(0.20, desc="🎤 Transcribiendo con Whisper...")
             estado_transcribe = f"""
-🎤 **[Paso 1/3] Transcribiendo audio con Whisper...**
+{icon('mic', 20, '#8b5cf6')} **[Paso 1/3] Transcribiendo audio con Whisper...**
 
-🧠 Modelo: Whisper {whisper_model}
-🌍 Idioma: Español
-🔄 Procesando audio...
+{icon('brain', 18, '#a855f7')} Modelo: Whisper {whisper_model}
+{icon('globe', 18, '#3b82f6')} Idioma: Español
+{icon('loader', 18, '#8b5cf6')} Procesando audio...
 
-💡 *Whisper está convirtiendo el audio en texto*
+{icon('lightbulb', 18, '#f59e0b')} *Whisper está convirtiendo el audio en texto*
             """
             yield None, estado_transcribe, None, None, None
 
@@ -178,20 +245,23 @@ class VideoSummarizerWebApp:
             transcripcion = transcript_result.get('text', '')
 
             if not transcripcion or len(transcripcion.strip()) < 50:
-                yield None, "❌ Transcripción muy corta o vacía. Verifica que el video tenga audio.", None, None, None
+                yield None, self._format_status_message(
+                    "<strong>Transcripción muy corta o vacía.</strong><br>Verifica que el video tenga audio claro y audible.",
+                    "error"
+                ), None, None, None
                 return
 
             # Transcripción completada
             progress(0.60, desc="✅ Transcripción completada")
             palabras_transcritas = len(transcripcion.split())
             estado_trans_ok = f"""
-✅ **[Paso 1/3] Transcripción completada**
+{styled_icon('check', 18, '#10b981', '#d1fae5')} **[Paso 1/3] Transcripción completada**
 
-📝 **Resultado:**
+{icon('file-text', 18, '#6366f1')} **Resultado:**
 - Palabras: {palabras_transcritas:,}
 - Caracteres: {len(transcripcion):,}
 
-🎯 Texto capturado correctamente
+{icon('target', 18, '#10b981')} Texto capturado correctamente
             """
             yield None, estado_trans_ok, None, None, None
             time.sleep(0.5)
@@ -199,13 +269,13 @@ class VideoSummarizerWebApp:
             # PASO 2: Resumen (60-85%)
             progress(0.65, desc="🧠 Analizando texto...")
             estado_analisis = f"""
-🧠 **[Paso 2/3] Analizando texto...**
+{icon('brain', 20, '#a855f7')} **[Paso 2/3] Analizando texto...**
 
-📊 Identificando palabras clave...
-📋 Extrayendo puntos principales...
-🔍 Preparando para resumen...
+{icon('bar-chart', 18, '#6366f1')} Identificando palabras clave...
+{icon('list', 18, '#6366f1')} Extrayendo puntos principales...
+{icon('search', 18, '#8b5cf6')} Preparando para resumen...
 
-💡 *Analizando {palabras_transcritas:,} palabras*
+{icon('lightbulb', 18, '#f59e0b')} *Analizando {palabras_transcritas:,} palabras*
             """
             yield None, estado_analisis, None, None, None
 
@@ -214,16 +284,16 @@ class VideoSummarizerWebApp:
 
             progress(0.72, desc="✨ Generando resumen...")
             estado_resumen = f"""
-✨ **[Paso 2/3] Generando resumen inteligente...**
+{icon('sparkles', 20, '#a855f7')} **[Paso 2/3] Generando resumen inteligente...**
 
-🧠 Sistema híbrido activado:
+{icon('brain', 18, '#a855f7')} Sistema híbrido activado:
 - Intentando resumen abstractivo (mT5)...
 - Fallback extractivo disponible
 
-📊 Procesando {palabras_transcritas:,} palabras
-🎯 Objetivo: ~{int(palabras_transcritas * 0.25)} palabras
+{icon('bar-chart', 18, '#6366f1')} Procesando {palabras_transcritas:,} palabras
+{icon('target', 18, '#10b981')} Objetivo: ~{int(palabras_transcritas * 0.25)} palabras
 
-⏳ *Esto puede tardar 30-60 segundos*
+{icon('clock', 18, '#3b82f6')} *Esto puede tardar 30-60 segundos*
             """
             yield None, estado_resumen, None, None, None
 
@@ -240,13 +310,13 @@ class VideoSummarizerWebApp:
             # PASO 3: Finalización (85-100%)
             progress(0.90, desc="📊 Calculando estadísticas...")
             estado_stats = f"""
-📊 **[Paso 3/3] Finalizando procesamiento...**
+{icon('bar-chart', 20, '#6366f1')} **[Paso 3/3] Finalizando procesamiento...**
 
-📈 Calculando estadísticas...
-📁 Preparando archivos descargables...
-✨ Generando informe completo...
+{icon('trending-up', 18, '#6366f1')} Calculando estadísticas...
+{icon('folder', 18, '#6366f1')} Preparando archivos descargables...
+{icon('sparkles', 18, '#a855f7')} Generando informe completo...
 
-⏳ Casi listo...
+{icon('clock', 18, '#3b82f6')} Casi listo...
             """
             yield None, estado_stats, None, None, None
 
@@ -280,24 +350,61 @@ class VideoSummarizerWebApp:
             segundos = int(elapsed_time % 60)
             tiempo_str = f"{minutos}:{segundos:02d}" if minutos > 0 else f"{segundos} segundos"
 
-            mensaje_exito = f"""
-🎉 **¡Proceso completado exitosamente!**
+            mensaje_exito = self._format_status_message(f"""
+                <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 10px; color: #065f46;">
+                    {styled_icon('party-popper', 22, '#10b981', 'transparent')}
+                    <span style="color: #065f46;">¡Proceso completado exitosamente!</span>
+                </h3>
 
-📁 **Video:** {Path(video_path).name}
-📌 **Título:** {analysis['title']}
-⏱️ **Tiempo total:** {tiempo_str}
+                <div style="display: grid; gap: 10px; margin-bottom: 16px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('folder', 18, '#6366f1')}
+                        <span style="color: #1e293b;"><strong>Video:</strong> {Path(video_path).name}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('bookmark', 18, '#8b5cf6')}
+                        <span style="color: #1e293b;"><strong>Título:</strong> {analysis['title']}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {icon('clock', 18, '#3b82f6')}
+                        <span style="color: #1e293b;"><strong>Tiempo total:</strong> {tiempo_str}</span>
+                    </div>
+                </div>
 
-📊 **Resumen de resultados:**
-- Transcripción: {stats['transcripcion']['palabras']:,} palabras
-- Resumen: {stats['resumen']['palabras']:,} palabras
-- Compresión: {(1-stats['compresion']['ratio_palabras'])*100:.1f}% reducción
+                <div style="margin-bottom: 16px; color: #1e293b;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        {icon('bar-chart', 20, '#6366f1')}
+                        <strong style="color: #1e293b;">Resumen de resultados:</strong>
+                    </div>
+                    <ul style="margin: 0; padding-left: 28px; color: #1e293b;">
+                        <li>Transcripción: <strong>{stats['transcripcion']['palabras']:,}</strong> palabras</li>
+                        <li>Resumen: <strong>{stats['resumen']['palabras']:,}</strong> palabras</li>
+                        <li>Compresión: <strong>{(1-stats['compresion']['ratio_palabras'])*100:.1f}%</strong> reducción</li>
+                    </ul>
+                </div>
 
-📥 **Archivos descargables:**
-- ✅ Informe Markdown completo
-- ✅ Datos JSON estructurados
+                <div style="margin-bottom: 12px; color: #1e293b;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        {icon('download', 20, '#10b981')}
+                        <strong style="color: #1e293b;">Archivos descargables:</strong>
+                    </div>
+                    <div style="display: grid; gap: 6px; padding-left: 28px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            {styled_icon('check', 14, '#10b981', 'transparent')}
+                            <span style="color: #1e293b;">Informe Markdown completo</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            {styled_icon('check', 14, '#10b981', 'transparent')}
+                            <span style="color: #1e293b;">Datos JSON estructurados</span>
+                        </div>
+                    </div>
+                </div>
 
-💡 *Puedes descargar los archivos desde el botón de descarga*
-            """
+                <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(245, 158, 11, 0.15); border-radius: 4px;">
+                    {icon('lightbulb', 18, '#f59e0b')}
+                    <em style="color: #78350f;">Puedes descargar los archivos desde el botón de descarga más abajo</em>
+                </div>
+            """, "success")
 
             yield (
                 resultado_transcripcion,
@@ -308,21 +415,32 @@ class VideoSummarizerWebApp:
             )
 
         except Exception as e:
-            error_msg = f"""
-❌ **Error durante el procesamiento**
+            error_msg = self._format_status_message(f"""
+                <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                    <span>Error durante el procesamiento</span>
+                </h3>
 
-**Detalles:** {str(e)}
+                <div style="margin-bottom: 12px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                    <strong>Detalles:</strong>
+                    <p style="margin: 8px 0 0 0;">{str(e)}</p>
+                </div>
 
-**Posibles soluciones:**
-- Verifica que el video tenga audio
-- Prueba con un video más pequeño
-- Intenta con un modelo Whisper diferente
+                <div style="margin-bottom: 12px;">
+                    <strong>Posibles soluciones:</strong>
+                    <ul style="margin: 8px 0 0 0;">
+                        <li>Verifica que el video tenga audio</li>
+                        <li>Prueba con un video más pequeño</li>
+                        <li>Intenta con un modelo Whisper diferente</li>
+                    </ul>
+                </div>
 
-**Información técnica:**
-```
-{traceback.format_exc()}
-```
-            """
+                <details style="margin-top: 12px;">
+                    <summary style="cursor: pointer; padding: 8px; background: rgba(255,255,255,0.3); border-radius: 4px;">
+                        <strong>Información técnica</strong>
+                    </summary>
+                    <pre style="margin: 8px 0 0 0; padding: 12px; background: rgba(0,0,0,0.05); border-radius: 4px; overflow-x: auto; font-size: 0.85em;">{traceback.format_exc()}</pre>
+                </details>
+            """, "error")
             print(error_msg)
             yield None, error_msg, None, None, None
 
@@ -370,7 +488,7 @@ class VideoSummarizerWebApp:
     
     def _formatear_transcripcion(self, transcripcion, stats):
         """Formatea la transcripción para mostrar"""
-        return f"""## 📝 Transcripción Completa
+        return f"""## {icon('file-text', 22, '#6366f1')} Transcripción Completa
 
 {transcripcion}
 
@@ -385,15 +503,15 @@ class VideoSummarizerWebApp:
 
         keywords_text = ", ".join([f"**{word}**" for word, _ in analysis['keywords'][:8]])
 
-        return f"""## ✨ Resumen Generado
+        return f"""## {icon('sparkles', 22, '#a855f7')} Resumen Generado
 
 {resumen}
 
-### 🔑 Puntos Clave
+### {icon('key', 20, '#6366f1')} Puntos Clave
 
 {bullet_text}
 
-### 🏷️ Palabras Clave
+### {icon('tag', 20, '#8b5cf6')} Palabras Clave
 
 {keywords_text}
 
@@ -411,18 +529,18 @@ class VideoSummarizerWebApp:
 
         html = f"""
         <div style="font-family: Arial, sans-serif; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
-            <h2 style="margin-top: 0;">📊 Estadísticas del Procesamiento</h2>
+            <h2 style="margin-top: 0;">{icon('bar-chart', 24, '#ffffff')} Estadísticas del Procesamiento</h2>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
-                    <h3>🎤 Transcripción</h3>
+                    <h3>{icon('mic', 22, '#ffffff')} Transcripción</h3>
                     <p><strong>Palabras:</strong> {stats['transcripcion']['palabras']:,}</p>
                     <p><strong>Caracteres:</strong> {stats['transcripcion']['caracteres']:,}</p>
                     <p><strong>Líneas:</strong> {stats['transcripcion']['lineas']:,}</p>
                 </div>
 
                 <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
-                    <h3>📝 Resumen</h3>
+                    <h3>{icon('file-text', 22, '#ffffff')} Resumen</h3>
                     <p><strong>Palabras:</strong> {stats['resumen']['palabras']:,}</p>
                     <p><strong>Caracteres:</strong> {stats['resumen']['caracteres']:,}</p>
                     <p><strong>Líneas:</strong> {stats['resumen']['lineas']:,}</p>
@@ -430,20 +548,20 @@ class VideoSummarizerWebApp:
             </div>
 
             <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-top: 20px;">
-                <h3>🎯 Compresión</h3>
+                <h3>{icon('target', 22, '#ffffff')} Compresión</h3>
                 <p><strong>Ratio de Caracteres:</strong> {ratio_car:.1f}% (reducción de {100-ratio_car:.1f}%)</p>
                 <p><strong>Ratio de Palabras:</strong> {ratio_pal:.1f}% (reducción de {100-ratio_pal:.1f}%)</p>
             </div>
 
             <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-top: 20px;">
-                <h3>🏷️ Palabras Clave Detectadas</h3>
+                <h3>{icon('tag', 22, '#ffffff')} Palabras Clave Detectadas</h3>
                 <div style="margin-top: 10px;">
                     {keywords_html}
                 </div>
             </div>
 
             <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">
-                ⏰ Procesado: {stats['timestamp']}
+                {icon('clock', 18, '#ffffff')} Procesado: {stats['timestamp']}
             </p>
         </div>
         """
@@ -474,7 +592,7 @@ class VideoSummarizerWebApp:
             String con información formateada en Markdown
         """
         if video_file is None:
-            return "📤 **Sube un video para ver su información**"
+            return f"{styled_icon('upload', 20, '#8b5cf6', '#f3e8ff')} **Sube un video para ver su información**"
 
         try:
             from moviepy import VideoFileClip
@@ -515,34 +633,34 @@ class VideoSummarizerWebApp:
                 processing_speed = "Lento (~10-15 min)"
 
             info = f"""
-## 📊 Información del Video
+## {icon('bar-chart', 22, '#6366f1')} Información del Video
 
-### 📁 Archivo
+### {icon('folder', 20, '#8b5cf6')} Archivo
 - **Nombre:** {video_name}
 - **Tamaño:** {file_size_mb:.2f} MB ({size_category})
 - **Ruta:** `{Path(video_path).parent.name}/{video_name}`
 
-### 🎬 Propiedades
+### {icon('film', 20, '#a855f7')} Propiedades
 - **Duración:** {duration_str}
 - **Resolución:** {resolution}
 - **FPS:** {fps}
 
-### ⚡ Estimación de Procesamiento
+### {icon('activity', 20, '#3b82f6')} Estimación de Procesamiento
 - **Tiempo aproximado:** {processing_speed}
 - **Recomendación:** Modelo Whisper {'tiny/base' if file_size_mb < 100 else 'base/small'}
 
 ---
 
-✅ **Video validado - Listo para procesar**
+{styled_icon('check', 20, '#10b981', '#d1fae5')} **Video validado - Listo para procesar**
 
-💡 **Tip:** Videos más pequeños se procesan más rápido
+{icon('lightbulb', 18, '#f59e0b')} **Tip:** Videos más pequeños se procesan más rápido
             """
 
             return info
 
         except Exception as e:
             return f"""
-## ⚠️ Error al leer información del video
+## {styled_icon('alert-triangle', 22, '#f59e0b', '#fef3c7')} Error al leer información del video
 
 **Detalles:** {str(e)}
 
@@ -570,22 +688,22 @@ El video puede estar dañado o en un formato no compatible.
                 data = response.json()
 
                 if not data.get('success'):
-                    return f"⚠️ **Error:** {data.get('error', 'Error desconocido')}"
+                    return f"{styled_icon('alert-triangle', 20, '#f59e0b', '#fef3c7')} **Error:** {data.get('error', 'Error desconocido')}"
 
                 history = data.get('history', [])
                 total = data.get('total', 0)
 
                 if not history:
-                    return """
-# 📋 Historial de Procesamiento
+                    return f"""
+# {icon('history', 24, '#6366f1')} Historial de Procesamiento
 
 No hay videos procesados todavía.
 
-💡 **Tip:** Procesa tu primer video en la pestaña "🎬 Procesar Video"
+{icon('lightbulb', 18, '#f59e0b')} **Tip:** Procesa tu primer video en la pestaña "{icon('film', 18, '#8b5cf6')} Procesar Video"
                     """
 
                 # Formatear historial
-                md = f"# 📋 Historial de Procesamiento\n\n"
+                md = f"# {icon('history', 24, '#6366f1')} Historial de Procesamiento\n\n"
                 md += f"**Total de videos procesados:** {total}\n"
                 md += f"**Mostrando:** {len(history)} más recientes\n\n"
                 md += "---\n\n"
@@ -597,13 +715,13 @@ No hay videos procesados todavía.
 
                     # Icono basado en estado
                     if summ:
-                        status_icon = "✅"
+                        status_icon = icon('check', 18, '#10b981')
                         status_text = "Completo"
                     elif trans:
-                        status_icon = "📝"
+                        status_icon = icon('file-text', 18, '#6366f1')
                         status_text = "Solo transcripción"
                     else:
-                        status_icon = "⚠️"
+                        status_icon = icon('alert-triangle', 18, '#f59e0b')
                         status_text = "Incompleto"
 
                     md += f"## {status_icon} {i}. {video['filename']}\n\n"
@@ -615,7 +733,7 @@ No hay videos procesados todavía.
 
                     # Información de transcripción
                     if trans:
-                        md += f"### 📝 Transcripción\n"
+                        md += f"### {icon('file-text', 20, '#6366f1')} Transcripción\n"
                         md += f"- **Palabras:** {trans['word_count']:,}\n"
                         md += f"- **Caracteres:** {trans['char_count']:,}\n"
                         md += f"- **Idioma:** {trans['language']}\n"
@@ -624,7 +742,7 @@ No hay videos procesados todavía.
 
                     # Información de resumen
                     if summ:
-                        md += f"### ✨ Resumen\n"
+                        md += f"### {icon('sparkles', 20, '#a855f7')} Resumen\n"
                         md += f"- **Palabras:** {summ['word_count']}\n"
                         md += f"- **Compresión:** {summ['compression_ratio']:.1%}\n"
                         md += f"- **Modelo:** {summ['model']}\n"
@@ -636,7 +754,7 @@ No hay videos procesados todavía.
 
             else:
                 return f"""
-# ⚠️ Error al conectar con la API
+# {styled_icon('alert-triangle', 24, '#f59e0b', '#fef3c7')} Error al conectar con la API
 
 **Código de estado:** {response.status_code}
 
@@ -653,8 +771,8 @@ docker-compose up api
                 """
 
         except requests.exceptions.ConnectionError:
-            return """
-# ⚠️ No se puede conectar con la API
+            return f"""
+# {styled_icon('alert-triangle', 24, '#f59e0b', '#fef3c7')} No se puede conectar con la API
 
 La API REST no está disponible.
 
@@ -669,18 +787,18 @@ La API REST no está disponible.
    netstat -ano | findstr :5000
    ```
 
-💡 **Nota:** Si estás usando la interfaz sin Docker, la API debe estar corriendo en `http://localhost:5000`
+{icon('lightbulb', 18, '#f59e0b')} **Nota:** Si estás usando la interfaz sin Docker, la API debe estar corriendo en `http://localhost:5000`
             """
 
         except Exception as e:
             return f"""
-# ❌ Error al obtener historial
+# {styled_icon('x', 24, '#ef4444', '#fee2e2')} Error al obtener historial
 
 **Detalles:** {str(e)}
 
 **Tipo de error:** {type(e).__name__}
 
-💡 Intenta refrescar el historial más tarde
+{icon('lightbulb', 18, '#f59e0b')} Intenta refrescar el historial más tarde
             """
 
 
@@ -706,27 +824,67 @@ def crear_interfaz(modelo_path="models/mt5-video-summarizer-final"):
         .gradio-container {
             max-width: 1400px !important;
         }
+        .icon {
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+        .icon-spin {
+            animation: icon-spin 1s linear infinite;
+        }
+        @keyframes icon-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         """
     ) as demo:
         
         # Header
-        gr.Markdown("""
-        # 🎬 Sistema de Resumen Automático de Videos Educativos
-        
-        **Convierte videos largos en resúmenes concisos usando IA**
-        
-        Procesamiento en 3 pasos:
-        1. 🎤 **Whisper** transcribe el audio del video
-        2. 🧠 **mT5** genera un resumen inteligente
-        3. 📊 Obtiene estadísticas y resultados descargables
-        
-        ---
+        gr.HTML(f"""
+        <div style="text-align: center; padding: 20px 0;">
+            <h1 style="display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0;">
+                {icon('film', 32, '#8b5cf6')}
+                <span>Sistema de Resumen Automático de Videos Educativos</span>
+            </h1>
+            <p style="font-size: 1.1em; margin: 16px 0; color: #64748b;">
+                <strong>Convierte videos largos en resúmenes concisos usando IA</strong>
+            </p>
+
+            <div style="display: flex; justify-content: center; gap: 40px; margin: 24px 0; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #f3e8ff; padding: 8px; border-radius: 8px; display: flex;">
+                        {icon('mic', 20, '#8b5cf6')}
+                    </span>
+                    <span><strong>Whisper</strong> transcribe el audio</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #f3e8ff; padding: 8px; border-radius: 8px; display: flex;">
+                        {icon('sparkles', 20, '#a855f7')}
+                    </span>
+                    <span><strong>mT5</strong> genera resumen inteligente</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #d1fae5; padding: 8px; border-radius: 8px; display: flex;">
+                        {icon('download', 20, '#10b981')}
+                    </span>
+                    <span>Resultados descargables</span>
+                </div>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+        </div>
         """)
         
         with gr.Row():
             with gr.Column(scale=1):
                 # Panel de entrada
-                gr.Markdown("## 📤 Subir Video")
+                gr.HTML(f"""
+                <div style="margin-bottom: 16px;">
+                    <h2 style="display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.5em;">
+                        {icon('upload', 24, '#8b5cf6')}
+                        <span>Subir Video</span>
+                    </h2>
+                </div>
+                """)
 
                 video_input = gr.Video(
                     label="Selecciona tu video",
@@ -735,7 +893,7 @@ def crear_interfaz(modelo_path="models/mt5-video-summarizer-final"):
 
                 # Preview del video
                 video_preview = gr.Markdown(
-                    "📤 **Sube un video para ver su información**",
+                    "**Sube un video para ver su información**",
                     label="Vista Previa"
                 )
                 
@@ -770,29 +928,39 @@ def crear_interfaz(modelo_path="models/mt5-video-summarizer-final"):
                     variant="primary",
                     size="lg"
                 )
-                
-                status_output = gr.Markdown(
-                    "ℹ️ Sube un video y haz clic en 'Procesar Video'",
+
+                status_output = gr.HTML(
+                    f"""<div style="padding: 12px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; display: flex; align-items: center; gap: 10px;">
+                        {icon('info', 20, '#3b82f6')}
+                        <span style="color: #1e293b; font-weight: 500;">Sube un video y haz clic en 'Procesar Video'</span>
+                    </div>""",
                     label="Estado"
                 )
             
             with gr.Column(scale=2):
                 # Panel de resultados
-                gr.Markdown("## 📋 Resultados")
-                
+                gr.HTML(f"""
+                <div style="margin-bottom: 16px;">
+                    <h2 style="display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.5em;">
+                        {icon('bar-chart', 24, '#6366f1')}
+                        <span>Resultados</span>
+                    </h2>
+                </div>
+                """)
+
                 with gr.Tabs():
                     with gr.Tab("✨ Resumen"):
                         resumen_output = gr.Markdown(
                             "El resumen aparecerá aquí...",
                             label="Resumen Generado"
                         )
-                    
+
                     with gr.Tab("📝 Transcripción"):
                         transcripcion_output = gr.Markdown(
                             "La transcripción completa aparecerá aquí...",
                             label="Transcripción"
                         )
-                    
+
                     with gr.Tab("📊 Estadísticas"):
                         stats_output = gr.HTML(
                             "<p>Las estadísticas aparecerán aquí...</p>",
@@ -800,12 +968,15 @@ def crear_interfaz(modelo_path="models/mt5-video-summarizer-final"):
                         )
 
                     with gr.Tab("📋 Historial"):
-                        gr.Markdown("""
-                        ## 📋 Historial de Videos Procesados
-
-                        Aquí puedes ver todos los videos que has procesado con la API REST.
-
-                        **Nota:** Este historial se sincroniza con la base de datos del backend.
+                        gr.HTML(f"""
+                        <div style="padding: 16px;">
+                            <h2 style="display: flex; align-items: center; gap: 10px; margin: 0 0 16px 0;">
+                                {icon('history', 24, '#6366f1')}
+                                <span>Historial de Videos Procesados</span>
+                            </h2>
+                            <p>Aquí puedes ver todos los videos que has procesado con la API REST.</p>
+                            <p><strong>Nota:</strong> Este historial se sincroniza con la base de datos del backend.</p>
+                        </div>
                         """)
 
                         historial_md = gr.Markdown(
@@ -826,23 +997,22 @@ def crear_interfaz(modelo_path="models/mt5-video-summarizer-final"):
         # Footer con información
         gr.Markdown("""
         ---
-        ### 💡 Consejos de uso:
-        
-        - ✅ **Formatos soportados:** MP4, AVI, MOV, MKV, WebM
-        - ✅ **Tamaño recomendado:** Videos de hasta 30 minutos
-        - ✅ **Idioma:** Optimizado para español
-        - ⚠️ **Primera ejecución:** Los modelos se descargan automáticamente (puede tomar 2-3 minutos)
-        
-        ### ⚙️ Recomendaciones de configuración:
-        
+        ### Consejos de uso:
+
+        - **Formatos soportados:** MP4, AVI, MOV, MKV, WebM
+        - **Tamaño recomendado:** Videos de hasta 30 minutos
+        - **Idioma:** Optimizado para español
+
+        ### Recomendaciones de configuración:
+
         | Tipo de Video | Modelo Whisper | Calidad Generación |
         |--------------|----------------|-------------------|
         | Corto (<5 min) | base | 4 beams |
         | Medio (5-15 min) | base/small | 4 beams |
         | Largo (>15 min) | small/medium | 6 beams |
-        
+
         ---
-        **Desarrollado con ❤️ usando Whisper + mT5 + Gradio**
+        **Desarrollado usando Whisper + mT5 + Gradio**
         """)
         
         # Conectar eventos

@@ -326,6 +326,15 @@ function formatDuration(seconds) {
     }
 }
 
+function getIconSVG(type) {
+    const icons = {
+        success: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+        error: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+        info: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
+    };
+    return icons[type] || icons.info;
+}
+
 function showNotification(message, type = 'info') {
     // Crear notificación
     const notification = document.createElement('div');
@@ -346,12 +355,12 @@ function showNotification(message, type = 'info') {
         gap: 0.5rem;
         max-width: 400px;
     `;
-    
-    const icon = type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ';
-    notification.innerHTML = `<strong>${icon}</strong> ${message}`;
-    
+
+    const iconSVG = getIconSVG(type);
+    notification.innerHTML = `<div style="display: flex; align-items: center; flex-shrink: 0;">${iconSVG}</div> <span>${message}</span>`;
+
     document.body.appendChild(notification);
-    
+
     // Remover después de 3 segundos
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease-out';

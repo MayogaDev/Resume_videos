@@ -17,6 +17,7 @@ sys.path.insert(0, str(project_root))
 
 from backend.core.transcription import VideoTranscriber
 from backend.core.summarization import VideoSummarizer
+from frontend.web.icons import icon, styled_icon
 
 # Inicializar transcriptor y resumidor globales
 transcriber = None
@@ -43,15 +44,15 @@ def inicializar_summarizer():
 def procesar_video(video_file, whisper_model, generar_resumen, progress=gr.Progress()):
     """Procesa un video y genera transcripción (y opcionalmente resumen)"""
     if video_file is None:
-        return "⚠️ Por favor sube un video", "", "", ""
+        return f"{icon('alert-triangle', 18, '#f59e0b')} Por favor sube un video", "", "", ""
 
     try:
         # Inicializar Whisper
-        progress(0.1, desc="🔄 Inicializando Whisper...")
+        progress(0.1, desc=f"{icon('loader', 16)} Inicializando Whisper...")
         inicializar_whisper(whisper_model)
 
         # Transcribir
-        progress(0.3, desc="🎤 Transcribiendo audio...")
+        progress(0.3, desc=f"{icon('mic', 16)} Transcribiendo audio...")
         video_path = video_file.name if hasattr(video_file, 'name') else video_file
 
         result = transcriber.transcribe_video(
@@ -68,7 +69,7 @@ def procesar_video(video_file, whisper_model, generar_resumen, progress=gr.Progr
         summary_md = ""
 
         if generar_resumen and text:
-            progress(0.7, desc="✨ Generando resumen...")
+            progress(0.7, desc=f"{icon('sparkles', 16)} Generando resumen...")
             inicializar_summarizer()
 
             summary = summarizer.generate_summary(
@@ -79,7 +80,7 @@ def procesar_video(video_file, whisper_model, generar_resumen, progress=gr.Progr
 
             compression_ratio = len(summary.split()) / stats.get('total_words', 1)
 
-            summary_md = f"""## ✨ Resumen Generado
+            summary_md = f"""## {icon('sparkles', 22, '#a855f7')} Resumen Generado
 
 {summary}
 
@@ -88,18 +89,18 @@ def procesar_video(video_file, whisper_model, generar_resumen, progress=gr.Progr
 """
 
         # Formatear resultados
-        progress(1.0, desc="✅ Completado!")
+        progress(1.0, desc=f"{icon('check', 16, '#10b981')} Completado!")
 
         status = f"""
-✅ **Procesamiento completado**
+{styled_icon('check', 20, '#10b981', '#d1fae5')} **Procesamiento completado**
 
-📁 Video: {Path(video_path).name}
-📊 Palabras: {stats.get('total_words', 0):,}
-📊 Caracteres: {stats.get('total_characters', 0):,}
-{"✨ Resumen: Generado" if generar_resumen else ""}
+{icon('folder', 18, '#6366f1')} Video: {Path(video_path).name}
+{icon('bar-chart', 18, '#8b5cf6')} Palabras: {stats.get('total_words', 0):,}
+{icon('bar-chart', 18, '#6366f1')} Caracteres: {stats.get('total_characters', 0):,}
+{icon('sparkles', 18, '#a855f7') + " Resumen: Generado" if generar_resumen else ""}
         """
 
-        transcription_md = f"""## 📝 Transcripción Completa
+        transcription_md = f"""## {icon('file-text', 22, '#6366f1')} Transcripción Completa
 
 {text}
 
@@ -113,7 +114,7 @@ def procesar_video(video_file, whisper_model, generar_resumen, progress=gr.Progr
         return status, transcription_md, summary_md, preview
 
     except Exception as e:
-        error_msg = f"❌ Error: {str(e)}"
+        error_msg = f"{styled_icon('x', 20, '#ef4444', '#fee2e2')} Error: {str(e)}"
         print(error_msg)
         import traceback
         traceback.print_exc()
@@ -126,7 +127,7 @@ with gr.Blocks(
 ) as demo:
 
     gr.Markdown("""
-    # 🎬 Sistema de Transcripción y Resumen de Videos
+    # Sistema de Transcripción y Resumen de Videos
 
     **Convierte el audio de tus videos en texto y genera resúmenes automáticos**
 
@@ -193,18 +194,18 @@ with gr.Blocks(
 
     gr.Markdown("""
     ---
-    ### 💡 Consejos:
+    ### Consejos:
 
-    - ✅ **Formatos:** MP4, AVI, MOV, MKV, WebM
-    - ✅ **Modelo tiny:** Rápido, buena calidad
-    - ✅ **Modelo base:** Equilibrio velocidad/calidad
-    - ✅ **Modelo medium:** Mejor calidad, más lento
-    - ✨ **Resumen:** Genera resumen automático con mT5
-    - ⏱️ **Tiempo:** ~1-3 minutos por video de 10 min (en CPU)
-    - ⏱️ **Tiempo resumen:** +30-60 segundos adicionales
+    - **Formatos:** MP4, AVI, MOV, MKV, WebM
+    - **Modelo tiny:** Rápido, buena calidad
+    - **Modelo base:** Equilibrio velocidad/calidad
+    - **Modelo medium:** Mejor calidad, más lento
+    - **Resumen:** Genera resumen automático con mT5
+    - **Tiempo:** ~1-3 minutos por video de 10 min (en CPU)
+    - **Tiempo resumen:** +30-60 segundos adicionales
 
     ---
-    **Desarrollado con ❤️ usando Whisper + mT5 + Gradio**
+    **Desarrollado usando Whisper + mT5 + Gradio**
     """)
 
     # Conectar eventos

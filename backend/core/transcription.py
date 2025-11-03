@@ -17,6 +17,12 @@ from typing import Optional, Dict, Union
 from tqdm import tqdm
 import logging
 
+# Configurar directorio de caché de modelos Whisper
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+WHISPER_CACHE_DIR = PROJECT_ROOT / "models" / "whisper"
+WHISPER_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+os.environ["WHISPER_CACHE_DIR"] = str(WHISPER_CACHE_DIR)
+
 # Compatibilidad con MoviePy 1.x y 2.x
 try:
     from moviepy.editor import VideoFileClip
@@ -61,9 +67,13 @@ class VideoTranscriber:
             )
 
         self.logger.info(f"Cargando modelo Whisper ({model_size})...")
+        self.logger.info(f"Directorio de caché: {WHISPER_CACHE_DIR}")
         try:
-            self.model = whisper.load_model(model_size)
-            self.logger.info("Modelo cargado exitosamente")
+            self.model = whisper.load_model(
+                model_size,
+                download_root=str(WHISPER_CACHE_DIR)
+            )
+            self.logger.info("Modelo cargado exitosamente desde caché local")
         except Exception as e:
             self.logger.error(f"Error al cargar modelo Whisper: {e}")
             raise
