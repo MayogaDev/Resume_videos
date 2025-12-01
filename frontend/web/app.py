@@ -23,6 +23,17 @@ if sys.platform == 'win32':
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+# Configurar FFmpeg antes de importar cualquier módulo que lo use
+print("Configurando FFmpeg para procesamiento de video...")
+try:
+    from scripts.setup_ffmpeg import setup_ffmpeg_path
+    if setup_ffmpeg_path():
+        print("[OK] FFmpeg configurado correctamente")
+    else:
+        print("[ADVERTENCIA] FFmpeg no está disponible - el procesamiento de video fallará")
+except Exception as e:
+    print(f"[ERROR] No se pudo configurar FFmpeg: {e}")
+
 # Importar desde la nueva estructura
 try:
     from backend.core.transcription import VideoTranscriber
@@ -635,25 +646,56 @@ class VideoSummarizerWebApp:
             info = f"""
 ## {icon('bar-chart', 22, '#6366f1')} Información del Video
 
-### {icon('folder', 20, '#8b5cf6')} Archivo
-- **Nombre:** {video_name}
-- **Tamaño:** {file_size_mb:.2f} MB ({size_category})
-- **Ruta:** `{Path(video_path).parent.name}/{video_name}`
+<div style="margin-top: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: center; min-width: 20px; min-height: 20px;">
+            {icon('folder', 14, '#8b5cf6')}
+        </div>
+        <h3 style="margin: 0; font-size: 1.1em; font-weight: 600; color: #8b5cf6;">Archivo</h3>
+    </div>
+    <div style="margin-left: 28px; margin-bottom: 16px;">
+        <p style="margin: 4px 0;"><strong>Nombre:</strong> {video_name}</p>
+        <p style="margin: 4px 0;"><strong>Tamaño:</strong> {file_size_mb:.2f} MB ({size_category})</p>
+        <p style="margin: 4px 0;"><strong>Ruta:</strong> <code>{Path(video_path).parent.name}/{video_name}</code></p>
+    </div>
+</div>
 
-### {icon('film', 20, '#a855f7')} Propiedades
-- **Duración:** {duration_str}
-- **Resolución:** {resolution}
-- **FPS:** {fps}
+<div style="margin-top: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: center; min-width: 20px; min-height: 20px;">
+            {icon('film', 14, '#a855f7')}
+        </div>
+        <h3 style="margin: 0; font-size: 1.1em; font-weight: 600; color: #a855f7;">Propiedades</h3>
+    </div>
+    <div style="margin-left: 28px; margin-bottom: 16px;">
+        <p style="margin: 4px 0;"><strong>Duración:</strong> {duration_str}</p>
+        <p style="margin: 4px 0;"><strong>Resolución:</strong> {resolution}</p>
+        <p style="margin: 4px 0;"><strong>FPS:</strong> {fps}</p>
+    </div>
+</div>
 
-### {icon('activity', 20, '#3b82f6')} Estimación de Procesamiento
-- **Tiempo aproximado:** {processing_speed}
-- **Recomendación:** Modelo Whisper {'tiny/base' if file_size_mb < 100 else 'base/small'}
+<div style="margin-top: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: center; min-width: 20px; min-height: 20px;">
+            {icon('activity', 14, '#3b82f6')}
+        </div>
+        <h3 style="margin: 0; font-size: 1.1em; font-weight: 600; color: #3b82f6;">Estimación de Procesamiento</h3>
+    </div>
+    <div style="margin-left: 28px; margin-bottom: 16px;">
+        <p style="margin: 4px 0;"><strong>Tiempo aproximado:</strong> {processing_speed}</p>
+        <p style="margin: 4px 0;"><strong>Recomendación:</strong> Modelo Whisper {'tiny/base' if file_size_mb < 100 else 'base/small'}</p>
+    </div>
+</div>
 
----
+<hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
 
-{styled_icon('check', 20, '#10b981', '#d1fae5')} **Video validado - Listo para procesar**
+<div style="margin: 16px 0;">
+    {styled_icon('check', 20, '#10b981', '#d1fae5')} <strong>Video validado - Listo para procesar</strong>
+</div>
 
-{icon('lightbulb', 18, '#f59e0b')} **Tip:** Videos más pequeños se procesan más rápido
+<div style="margin: 16px 0;">
+    {icon('lightbulb', 18, '#f59e0b')} <strong>Tip:</strong> Videos más pequeños se procesan más rápido
+</div>
             """
 
             return info
@@ -1126,33 +1168,75 @@ Ejemplos de uso:
     print("=" * 70)
     
     demo = crear_interfaz(modelo_path=args.modelo)
-    
+
     print("\n✅ Interfaz creada exitosamente")
-    print(f"\n🌐 Abriendo en: http://localhost:{args.port}")
-    
-    if args.share:
-        print("🔗 Generando URL pública compartible...")
-    
-    print("\n💡 Presiona Ctrl+C para detener el servidor")
-    print("=" * 70)
-    print()
-    
-    # Lanzar
+
+    # PUERTO FIJO: Siempre usar 7860
+    # Si está ocupado, matar el proceso anterior y lanzar en ese mismo puerto
+    FIXED_PORT = args.port
+
+    print(f"\n🔧 Liberando puerto {FIXED_PORT} si está ocupado...")
+
+    # Matar procesos que estén usando el puerto con psutil
     try:
+        import psutil
+        import time
+
+        killed_any = False
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                # Buscar conexiones del proceso
+                for conn in proc.connections(kind='inet'):
+                    if conn.laddr.port == FIXED_PORT and conn.status == 'LISTEN':
+                        print(f"   Matando proceso {proc.info['name']} (PID: {proc.info['pid']})")
+                        proc.kill()
+                        killed_any = True
+                        break
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+
+        if killed_any:
+            print(f"✅ Procesos en puerto {FIXED_PORT} terminados")
+            time.sleep(2)  # Dar tiempo al SO para liberar el puerto
+        else:
+            print(f"✅ Puerto {FIXED_PORT} ya está libre")
+
+    except ImportError:
+        print(f"⚠️  psutil no disponible, no se puede liberar el puerto automáticamente")
+        print(f"💡 Instala psutil: pip install psutil")
+    except Exception as e:
+        print(f"⚠️  Error al liberar puerto: {e}")
+
+    # Lanzar en puerto fijo
+    try:
+        print(f"\n🌐 Iniciando servidor en puerto {FIXED_PORT}...")
+
         demo.launch(
             server_name="0.0.0.0",
-            server_port=args.port,
+            server_port=FIXED_PORT,
             share=args.share,
             debug=args.debug,
             show_error=True
         )
+
+        print(f"\n✅ Servidor iniciado exitosamente en http://localhost:{FIXED_PORT}")
+        if args.share:
+            print("🔗 URL pública compartible generada")
+        print("\n💡 Presiona Ctrl+C para detener el servidor")
+        print("=" * 70)
+
     except KeyboardInterrupt:
         print("\n\n⚠️  Servidor detenido por el usuario")
         print("👋 ¡Hasta luego!")
+
     except Exception as e:
         print(f"\n❌ Error al lanzar el servidor: {str(e)}")
-        print("\n💡 Asegúrate de que el puerto no esté ocupado:")
-        print(f"   netstat -ano | findstr :{args.port}")
+        print(f"\n💡 Para liberar el puerto {FIXED_PORT} manualmente:")
+        if platform.system() == "Windows":
+            print(f"   netstat -ano | findstr :{FIXED_PORT}")
+            print(f"   taskkill /F /PID <PID>")
+        else:
+            print(f"   lsof -ti:{FIXED_PORT} | xargs kill -9")
         sys.exit(1)
 
 
