@@ -6,6 +6,10 @@ import argparse
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Fix encoding for Windows
 if sys.platform == 'win32':
@@ -17,6 +21,14 @@ project_root = Path(__file__).parent.parent
 os.chdir(project_root)
 sys.path.insert(0, str(project_root))
 
+# Configurar FFmpeg antes de iniciar cualquier componente
+print("Configurando FFmpeg...")
+from scripts.setup_ffmpeg import setup_ffmpeg_path
+if not setup_ffmpeg_path():
+    print("\n⚠️  Advertencia: FFmpeg no está disponible.")
+    print("El procesamiento de videos podría fallar.")
+    input("Presiona Enter para continuar de todas formas...")
+
 def run_api():
     """Inicia el servidor API REST"""
     from backend.api.app import run_server
@@ -26,11 +38,12 @@ def run_api():
 def run_web():
     """Inicia la interfaz web Gradio"""
     print("🌐 Iniciando interfaz web...")
-    # Obtener modelo desde variable de entorno o usar default
+    # Obtener modelo y puerto desde variables de entorno
     model_path = os.getenv('MODEL_PATH', 'google/mt5-small')
+    web_port = os.getenv('WEB_PORT', '7860')
     # Importar dinámicamente
     import subprocess
-    subprocess.run([sys.executable, "frontend/web/app.py", "--modelo", model_path])
+    subprocess.run([sys.executable, "frontend/web/app.py", "--modelo", model_path, "--port", web_port])
 
 def run_cli():
     """Inicia la CLI"""
